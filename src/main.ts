@@ -21,6 +21,7 @@ let game: {
   particles: Set<Particle>;
 };
 function startGame() {
+  audio.play("buzz");
   menu.classList.add("hidden");
   game = {
     running: true,

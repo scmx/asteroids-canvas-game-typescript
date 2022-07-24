@@ -1,4 +1,5 @@
-const EFFECTS = ["projectile", "enemy-hit2", "game-over"] as const;
+const EFFECTS = ["projectile", "enemy-hit2", "game-over",
+  "buzz"] as const;
 type Effect = typeof EFFECTS[number];
 
 const AUDIO = new Map<string, null | HTMLAudioElement>(
