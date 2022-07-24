@@ -1,3 +1,4 @@
+import { audio } from "./audio";
 import { Enemy, Entity, Particle, Player, Projectile } from "./entities";
 import { autoScale } from "./scale";
 import "./style.css";
@@ -39,6 +40,7 @@ function startGame() {
   }
 }
 function gameOver() {
+  audio.play("game-over");
   game.running = false;
   menu.classList.remove("hidden");
 }
@@ -78,6 +80,7 @@ function update(time: DOMHighResTimeStamp) {
       );
       if (distance - projectile.radius < 2) {
         game.projectiles.delete(projectile);
+        audio.play("enemy-hit2");
         if (enemy.radius > 3) {
           game.score += 100;
           enemy.radius *= 0.5;
@@ -142,6 +145,7 @@ function handleProjectiles() {
         radius: 1,
       })
     );
+    audio.play("projectile");
   });
 }
 function spawnEnemy() {
