@@ -47,10 +47,11 @@ body,
   bottom: 0;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-end;
 }
 .menu-inner {
   background: rgba(255, 255, 255, 0.5);
+  margin-bottom: 2rem;
   padding: 1rem;
   border-radius: 1rem;
   border: 0.2rem solid rgba(0, 0, 0, 0.5);

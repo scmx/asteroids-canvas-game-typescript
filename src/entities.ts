@@ -4,12 +4,43 @@ interface Offset {
   x: number;
   y: number;
 }
+class Velocity {
+  private _x: number;
+  private _y: number;
+  private _speed: number;
+  constructor({ x, y }: Offset) {
+    this._x = x;
+    this._y = y;
+    this._speed = Math.hypot(x, y);
+  }
+
+  get x() {
+    return this._x;
+  }
+  get y() {
+    return this._y;
+  }
+  get speed() {
+    return this._speed;
+  }
+
+  set x(value: number) {
+    this._x = value;
+    this._speed = Math.hypot(this._x, this._y);
+  }
+
+  set y(value: number) {
+    this._y = value;
+    this._speed = Math.hypot(this._x, this._y);
+  }
+}
 export class Entity {
   position: Offset;
-  velocity: Offset;
+  velocity: Velocity;
   radius: number;
   color: string;
   alpha: number;
+  dead = false;
 
   constructor({
     position,
@@ -25,7 +56,7 @@ export class Entity {
     alpha?: number;
   }) {
     this.position = position;
-    this.velocity = velocity;
+    this.velocity = new Velocity(velocity);
     this.radius = radius;
     this.color = color;
     this.alpha = alpha;
@@ -49,6 +80,10 @@ export class Entity {
     c.fillStyle = color;
     c.fill();
     c.restore();
+  }
+
+  get speed() {
+    return Math.hypot(this.velocity.x, this.velocity.y);
   }
 }
 

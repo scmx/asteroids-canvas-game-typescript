@@ -1,4 +1,4 @@
-import { audio } from "./audio";
+import { handleAudio } from "./audio";
 import { Enemy, Entity, Particle, Player, Projectile } from "./entities";
 import { autoScale } from "./scale";
 import "./style.css";
@@ -11,6 +11,7 @@ let animationId: number;
 autoScale(canvas);
 handleProjectiles();
 handleMenu();
+const audio = handleAudio();
 
 let game: {
   running: boolean;
@@ -55,7 +56,8 @@ function animate(time: DOMHighResTimeStamp) {
 let lastEnemyTime = -1000;
 
 function update(time: DOMHighResTimeStamp) {
-  if (time > lastEnemyTime + 1000) {
+  const spawnInterval = Math.max(500, 1000 - Math.pow(game.score, 2 / 3));
+  if (time > lastEnemyTime + spawnInterval) {
     lastEnemyTime = time;
     spawnEnemy();
   }
@@ -72,6 +74,9 @@ function update(time: DOMHighResTimeStamp) {
     }
   }
   for (const enemy of game.enemies) {
+    if (enemy.dead) {
+      continue;
+    }
     enemy.update();
 
     for (const projectile of game.projectiles) {
@@ -79,18 +84,73 @@ function update(time: DOMHighResTimeStamp) {
         projectile.position.x - enemy.position.x,
         projectile.position.y - enemy.position.y
       );
-      if (distance - projectile.radius < 2) {
-        game.projectiles.delete(projectile);
-        audio.play("enemy-hit2");
-        if (enemy.radius > 3) {
-          game.score += 100;
-          enemy.radius *= 0.5;
-        } else {
-          game.score += 250;
-          game.enemies.delete(enemy);
-        }
-        explode(enemy, projectile);
+      if (distance - projectile.radius >= 2) {
+        continue;
       }
+      game.projectiles.delete(projectile);
+      audio.play("enemy-hit2");
+      if (enemy.radius > 3) {
+        game.score += 100;
+        enemy.radius *= 0.5;
+      } else {
+        game.score += 250;
+        game.enemies.delete(enemy);
+      }
+      explode(enemy, projectile);
+    }
+
+    for (const otherEnemy of game.enemies) {
+      if (otherEnemy === enemy) {
+        continue;
+      }
+      if (otherEnemy.dead) {
+        continue;
+      }
+      if (enemy.dead) {
+        continue;
+      }
+      const distance = Math.hypot(
+        otherEnemy.position.x - enemy.position.x,
+        otherEnemy.position.y - enemy.position.y
+      );
+      if (distance - otherEnemy.radius >= 2) {
+        continue;
+      }
+      audio.play("enemy-hit2");
+      let [smallest, largest] =
+        otherEnemy.radius < enemy.radius
+          ? [otherEnemy, enemy]
+          : [enemy, otherEnemy];
+      if (largest.speed * 3 < smallest.speed) {
+        [smallest, largest] = [largest, smallest];
+      } else {
+        largest.velocity.x *= 0.95;
+        largest.velocity.y *= 0.95;
+      }
+      largest.radius = Math.sqrt(
+        (Math.pow(largest.radius, 2) * Math.PI + Math.pow(smallest.radius, 2)) /
+          Math.PI
+      );
+      if (smallest.radius > 3) {
+        smallest.radius *= 0.5;
+      } else {
+        smallest.dead = true;
+        game.enemies.delete(smallest);
+      }
+      explode(smallest, largest);
+    }
+
+    if (enemy.position.x >= 100) {
+      enemy.position.x = 0;
+    }
+    if (enemy.position.x < 0) {
+      enemy.position.x = 100;
+    }
+    if (enemy.position.y >= 100) {
+      enemy.position.y = 0;
+    }
+    if (enemy.position.y < 0) {
+      enemy.position.y = 100;
     }
   }
   if (!game.running) {
@@ -160,11 +220,15 @@ function spawnEnemy() {
     y: game.player.position.y - position.y,
   };
   const angle = Math.atan2(distance.y, distance.x);
+  const speed = Math.random() * 0.75 + 0.5;
 
   game.enemies.add(
     new Enemy({
       position,
-      velocity: { x: Math.cos(angle) / 10, y: Math.sin(angle) / 10 },
+      velocity: {
+        x: (Math.cos(angle) / 10) * speed,
+        y: (Math.sin(angle) / 10) * speed,
+      },
       radius: Math.random() * 4 + 1,
       color: `hsl(${Math.random() * 360}, 50%,50%)`,
     })
