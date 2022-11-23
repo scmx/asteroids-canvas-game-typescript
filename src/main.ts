@@ -36,7 +36,7 @@ function startGame() {
     projectiles: new Set<Projectile>(),
     particles: new Set<Particle>(),
   };
-  window.game = game;
+  (window as any).game = game;
   if (!animationId) {
     animationId = requestAnimationFrame(animate);
   }
