@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
+    "build": "tsc && vite build --base=/asteroids-canvas-game-typescript/",
+    "preview": "vite preview --base /asteroids-canvas-game-typescript/"
   },
   "devDependencies": {
     "typescript": "^4.6.4",
