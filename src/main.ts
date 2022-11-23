@@ -192,6 +192,7 @@ function render() {
 }
 function handleProjectiles() {
   canvas.addEventListener("pointerdown", (event) => {
+    audio.start()
     const distance = {
       x: event.clientX - innerWidth / 2,
       y: event.clientY - innerHeight / 2,
@@ -241,6 +242,7 @@ function isOutOfBounds(entity: Entity) {
 function handleMenu() {
   menu.querySelector("button")?.addEventListener("click", () => {
     startGame();
+    audio.start();
   });
 }
 function explode(entity: Entity, other: Entity) {
