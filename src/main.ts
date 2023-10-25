@@ -82,7 +82,7 @@ function update(time: DOMHighResTimeStamp) {
     for (const projectile of game.projectiles) {
       const distance = Math.hypot(
         projectile.position.x - enemy.position.x,
-        projectile.position.y - enemy.position.y
+        projectile.position.y - enemy.position.y,
       );
       if (distance - projectile.radius >= 2) {
         continue;
@@ -111,7 +111,7 @@ function update(time: DOMHighResTimeStamp) {
       }
       const distance = Math.hypot(
         otherEnemy.position.x - enemy.position.x,
-        otherEnemy.position.y - enemy.position.y
+        otherEnemy.position.y - enemy.position.y,
       );
       if (distance - otherEnemy.radius >= 2) {
         continue;
@@ -129,7 +129,7 @@ function update(time: DOMHighResTimeStamp) {
       }
       largest.radius = Math.sqrt(
         (Math.pow(largest.radius, 2) * Math.PI + Math.pow(smallest.radius, 2)) /
-          Math.PI
+          Math.PI,
       );
       if (smallest.radius > 3) {
         smallest.radius *= 0.5;
@@ -159,7 +159,7 @@ function update(time: DOMHighResTimeStamp) {
   for (const enemy of game.enemies) {
     const distance = Math.hypot(
       game.player.position.x - enemy.position.x,
-      game.player.position.y - enemy.position.y
+      game.player.position.y - enemy.position.y,
     );
     if (distance - enemy.radius < 2) {
       explode(game.player, enemy);
@@ -192,7 +192,7 @@ function render() {
 }
 function handleProjectiles() {
   canvas.addEventListener("pointerdown", (event) => {
-    audio.start()
+    audio.start();
     const distance = {
       x: event.clientX - innerWidth / 2,
       y: event.clientY - innerHeight / 2,
@@ -205,7 +205,7 @@ function handleProjectiles() {
         velocity: { x: Math.cos(angle), y: Math.sin(angle) },
         color: "white",
         radius: 1,
-      })
+      }),
     );
     audio.play("projectile");
   });
@@ -232,7 +232,7 @@ function spawnEnemy() {
       },
       radius: Math.random() * 4 + 1,
       color: `hsl(${Math.random() * 360}, 50%,50%)`,
-    })
+    }),
   );
 }
 function isOutOfBounds(entity: Entity) {
@@ -240,7 +240,7 @@ function isOutOfBounds(entity: Entity) {
   return x < 0 || y < 0 || x > 100 || y > 100;
 }
 function handleMenu() {
-  menu.querySelector("button")?.addEventListener("click", () => {
+  menu.querySelector("button")?.addEventListener("pointerdown", () => {
     startGame();
     audio.start();
   });
@@ -258,7 +258,7 @@ function explode(entity: Entity, other: Entity) {
         color: entity.color,
         velocity,
         alpha: 0.5,
-      })
+      }),
     );
   }
 }

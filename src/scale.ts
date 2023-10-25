@@ -26,13 +26,28 @@ export function autoScale(canvas: HTMLCanvasElement) {
     canvas.style.height = `${innerHeight}px`;
   }
 
+  updateScale();
+
   let resizeDebounce: number;
-  addEventListener("resize", () => {
+
+  function resize() {
     clearTimeout(resizeDebounce);
     resizeDebounce = setTimeout(() => {
       updateScale();
     }, 100);
-  });
+  }
 
-  updateScale();
+  addEventListener("resize", resize);
+  addEventListener("orientationchange", resize);
+
+  // Disable swipes etc interrupting game on iOS
+  addEventListener("touchstart", prevent, { passive: false });
+  addEventListener("touchmove", prevent, { passive: false });
+  addEventListener("contextmenu", prevent, { passive: false });
+  addEventListener("selectstart", prevent, { passive: false });
+  addEventListener("selectionchange", prevent, { passive: false });
+
+  function prevent(event: Event) {
+    event.preventDefault();
+  }
 }
