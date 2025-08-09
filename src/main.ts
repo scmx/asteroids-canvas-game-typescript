@@ -12,6 +12,7 @@ autoScale(canvas);
 handleProjectiles();
 handleMenu();
 const audio = handleAudio();
+const pointerAngles = new Map()
 
 let game: {
   running: boolean;
@@ -56,6 +57,18 @@ function animate(time: DOMHighResTimeStamp) {
 let lastEnemyTime = -1000;
 
 function update(time: DOMHighResTimeStamp) {
+  for (const [, angle] of pointerAngles) {
+    spawnProjectile(angle)
+  }
+  for (const gamepad of navigator.getGamepads()) {
+    if (gamepad?.connected) {
+      const [x, y] = gamepad.axes
+      if (Math.abs(x) > 0.4 || Math.abs(y) > 0.4) {
+        const angle = Math.atan2(y, x)
+        spawnProjectile(angle)
+      }
+    }
+  }
   const spawnInterval = Math.max(500, 1000 - Math.pow(game.score, 2 / 3));
   if (time > lastEnemyTime + spawnInterval) {
     lastEnemyTime = time;
@@ -129,7 +142,7 @@ function update(time: DOMHighResTimeStamp) {
       }
       largest.radius = Math.sqrt(
         (Math.pow(largest.radius, 2) * Math.PI + Math.pow(smallest.radius, 2)) /
-          Math.PI,
+        Math.PI,
       );
       if (smallest.radius > 3) {
         smallest.radius *= 0.5;
@@ -190,25 +203,51 @@ function render() {
 
   scoreEl.textContent = `${game.score}`;
 }
+function spawnProjectile(angle: number) {
+  audio.start();
+  // const angle = Math.atan2(y, x);
+
+  game.projectiles.add(
+    new Projectile({
+      position: { ...game.player.position },
+      velocity: { x: Math.cos(angle), y: Math.sin(angle) },
+      color: "white",
+      radius: 1,
+    }),
+  );
+  audio.play("projectile");
+}
 function handleProjectiles() {
   canvas.addEventListener("pointerdown", (event) => {
-    audio.start();
+    if (event.pressure < 0.5) return
     const distance = {
       x: event.clientX - innerWidth / 2,
       y: event.clientY - innerHeight / 2,
     };
     const angle = Math.atan2(distance.y, distance.x);
-
-    game.projectiles.add(
-      new Projectile({
-        position: { ...game.player.position },
-        velocity: { x: Math.cos(angle), y: Math.sin(angle) },
-        color: "white",
-        radius: 1,
-      }),
-    );
-    audio.play("projectile");
+    pointerAngles.set(event.pointerId, angle)
   });
+  canvas.addEventListener("pointermove", (event) => {
+    if (event.pressure < 0.5) {
+      pointerAngles.delete(event.pointerId)
+      return
+    }
+    const distance = {
+      x: event.clientX - innerWidth / 2,
+      y: event.clientY - innerHeight / 2,
+    };
+    const angle = Math.atan2(distance.y, distance.x);
+    pointerAngles.set(event.pointerId, angle)
+  })
+  canvas.addEventListener("pointerup", (event) => {
+    pointerAngles.delete(event.pointerId)
+  })
+  canvas.addEventListener("pointerleave", (event) => {
+    pointerAngles.delete(event.pointerId)
+  })
+  canvas.addEventListener("pointercancel", (event) => {
+    pointerAngles.delete(event.pointerId)
+  })
 }
 function spawnEnemy() {
   const position =
