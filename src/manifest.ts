@@ -9,5 +9,12 @@ if (link) link.href = `data:application/manifest+json,${encodeURIComponent(
     background_color: "#000000",
     theme_color: "#000000",
     display: "fullscreen",
+    icons: [
+      {
+        type: "image/png",
+        sizes: "any",
+        src: `${location.href}/asteroids-game-logo.svg`,
+      },
+    ],
   }),
 )}`;
