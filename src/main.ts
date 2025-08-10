@@ -219,19 +219,18 @@ function render() {
   scoreEl.textContent = `${game.score}`;
 }
 function spawnProjectile(angle: number) {
-  audio.start();
-
   game.projectiles.getFree()?.start({
     position: { ...game.player.position },
     velocity: { x: Math.cos(angle), y: Math.sin(angle) },
     color: "white",
     radius: 1,
   })
+
   audio.play("projectile");
 }
 function handleProjectiles() {
   canvas.addEventListener("pointerdown", (event) => {
-    if (event.pressure < 0.5) return
+    audio.start()
     const distance = {
       x: event.clientX - innerWidth / 2,
       y: event.clientY - innerHeight / 2,
@@ -240,10 +239,7 @@ function handleProjectiles() {
     pointerAngles.set(event.pointerId, angle)
   });
   canvas.addEventListener("pointermove", (event) => {
-    if (event.pressure < 0.5) {
-      pointerAngles.delete(event.pointerId)
-      return
-    }
+    if (!pointerAngles.has(event.pointerId)) return
     const distance = {
       x: event.clientX - innerWidth / 2,
       y: event.clientY - innerHeight / 2,
