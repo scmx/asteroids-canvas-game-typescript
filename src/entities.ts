@@ -5,10 +5,10 @@ interface Offset {
   y: number;
 }
 class Velocity {
-  private _x: number;
-  private _y: number;
-  private _speed: number;
-  constructor({ x, y }: Offset) {
+  private _x: number = 0;
+  private _y: number = 0;
+  private _speed: number = 0;
+  reset({ x, y }: Offset) {
     this._x = x;
     this._y = y;
     this._speed = Math.hypot(x, y);
@@ -35,14 +35,14 @@ class Velocity {
   }
 }
 export class Entity {
-  position: Offset;
-  velocity: Velocity;
-  radius: number;
-  color: string;
-  alpha: number;
-  dead = false;
+  position: Offset = { x: 0, y: 0 };
+  velocity: Velocity = new Velocity()
+  radius: number = 0;
+  color: string = 'white';
+  alpha: number = 0;
+  free = true
 
-  constructor({
+  start({
     position,
     velocity = { x: 0, y: 0 },
     radius,
@@ -56,10 +56,12 @@ export class Entity {
     alpha?: number;
   }) {
     this.position = position;
-    this.velocity = new Velocity(velocity);
+    this.velocity.reset(velocity);
     this.radius = radius;
     this.color = color;
     this.alpha = alpha;
+    this.free = false
+    return this
   }
 
   update() {
@@ -87,9 +89,9 @@ export class Entity {
   }
 }
 
-export class Player extends Entity {}
+export class Player extends Entity { }
 
-export class Enemy extends Entity {}
+export class Enemy extends Entity { }
 
 export class Projectile extends Entity {
   color = "white";
@@ -112,4 +114,31 @@ function getScaledValues(entity: Entity) {
   };
   const radius = entity.radius * factor;
   return { position, radius };
+}
+
+export class Pool<T extends Entity> {
+  Klass: new () => T
+  size = 0
+  items: T[] = []
+  constructor(Klass: new () => T, size: number, items: T[] = []) {
+    this.Klass = Klass
+    this.size = size;
+    this.items = items
+  }
+  getFree() {
+    for (const item of this.items) {
+      if (!item.free) continue
+      item.free = false
+      return item
+    }
+    if (this.items.length === this.size) return null
+    const instance = new this.Klass()
+    this.items.push(instance);
+    return instance
+  }
+  *[Symbol.iterator]() {
+    for (const item of this.items) {
+      if (!item.free) yield item
+    }
+  }
 }

@@ -1,5 +1,5 @@
 import { handleAudio } from "./audio";
-import { Enemy, Entity, Particle, Player, Projectile } from "./entities";
+import { Enemy, Entity, Particle, Player, Pool, Projectile } from "./entities";
 import { autoScale } from "./scale";
 import "./style.css";
 
@@ -18,9 +18,9 @@ let game: {
   running: boolean;
   score: number;
   player: Player;
-  enemies: Set<Enemy>;
-  projectiles: Set<Projectile>;
-  particles: Set<Particle>;
+  enemies: Pool<Enemy>;
+  projectiles: Pool<Projectile>;
+  particles: Pool<Particle>;
 };
 function startGame() {
   audio.play("buzz");
@@ -28,14 +28,14 @@ function startGame() {
   game = {
     running: true,
     score: 0,
-    player: new Player({
+    player: new Player().start({
       position: { x: 50, y: 50 },
       radius: 5,
       color: "green",
     }),
-    enemies: new Set<Enemy>(),
-    projectiles: new Set<Projectile>(),
-    particles: new Set<Particle>(),
+    enemies: new Pool(Enemy, 100),
+    projectiles: new Pool(Projectile, 100),
+    particles: new Pool(Particle, 100),
   };
   (window as any).game = game;
   if (!animationId) {
@@ -77,17 +77,17 @@ function update(time: DOMHighResTimeStamp) {
   for (const particle of game.particles) {
     particle.update();
     if (isOutOfBounds(particle) || particle.alpha <= 0) {
-      game.particles.delete(particle);
+      particle.free = true
     }
   }
   for (const projectile of game.projectiles) {
     projectile.update();
     if (isOutOfBounds(projectile)) {
-      game.projectiles.delete(projectile);
+      projectile.free = true
     }
   }
   for (const enemy of game.enemies) {
-    if (enemy.dead) {
+    if (enemy.free) {
       continue;
     }
     enemy.update();
@@ -100,14 +100,14 @@ function update(time: DOMHighResTimeStamp) {
       if (distance - projectile.radius >= 2) {
         continue;
       }
-      game.projectiles.delete(projectile);
+      projectile.free = true
       audio.play("enemy-hit2");
       if (enemy.radius > 3) {
         game.score += 100;
         enemy.radius *= 0.5;
       } else {
         game.score += 250;
-        game.enemies.delete(enemy);
+        enemy.free = true
       }
       explode(enemy, projectile);
     }
@@ -116,10 +116,10 @@ function update(time: DOMHighResTimeStamp) {
       if (otherEnemy === enemy) {
         continue;
       }
-      if (otherEnemy.dead) {
+      if (otherEnemy.free) {
         continue;
       }
-      if (enemy.dead) {
+      if (enemy.free) {
         continue;
       }
       const distance = Math.hypot(
@@ -147,8 +147,7 @@ function update(time: DOMHighResTimeStamp) {
       if (smallest.radius > 3) {
         smallest.radius *= 0.5;
       } else {
-        smallest.dead = true;
-        game.enemies.delete(smallest);
+        smallest.free = true
       }
       explode(smallest, largest);
     }
@@ -205,16 +204,13 @@ function render() {
 }
 function spawnProjectile(angle: number) {
   audio.start();
-  // const angle = Math.atan2(y, x);
 
-  game.projectiles.add(
-    new Projectile({
-      position: { ...game.player.position },
-      velocity: { x: Math.cos(angle), y: Math.sin(angle) },
-      color: "white",
-      radius: 1,
-    }),
-  );
+  game.projectiles.getFree()?.start({
+    position: { ...game.player.position },
+    velocity: { x: Math.cos(angle), y: Math.sin(angle) },
+    color: "white",
+    radius: 1,
+  })
   audio.play("projectile");
 }
 function handleProjectiles() {
@@ -262,17 +258,15 @@ function spawnEnemy() {
   const angle = Math.atan2(distance.y, distance.x);
   const speed = Math.random() * 0.75 + 0.5;
 
-  game.enemies.add(
-    new Enemy({
-      position,
-      velocity: {
-        x: (Math.cos(angle) / 10) * speed,
-        y: (Math.sin(angle) / 10) * speed,
-      },
-      radius: Math.random() * 4 + 1,
-      color: `hsl(${Math.random() * 360}, 50%,50%)`,
-    }),
-  );
+  game.enemies.getFree()?.start({
+    position,
+    velocity: {
+      x: (Math.cos(angle) / 10) * speed,
+      y: (Math.sin(angle) / 10) * speed,
+    },
+    radius: Math.random() * 4 + 1,
+    color: `hsl(${Math.random() * 360}, 50%,50%)`,
+  });
 }
 function isOutOfBounds(entity: Entity) {
   const { x, y } = entity.position;
@@ -290,15 +284,13 @@ function explode(entity: Entity, other: Entity) {
       x: (Math.random() - 0.5) * 2,
       y: (Math.random() - 0.5) * 2,
     };
-    game.particles.add(
-      new Particle({
-        position: { ...other.position },
-        radius: 0.5,
-        color: entity.color,
-        velocity,
-        alpha: 0.5,
-      }),
-    );
+    game.particles.getFree()?.start({
+      position: { ...other.position },
+      radius: 0.5,
+      color: entity.color,
+      velocity,
+      alpha: 0.5,
+    });
   }
 }
 startGame();
