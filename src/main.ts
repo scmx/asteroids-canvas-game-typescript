@@ -57,18 +57,6 @@ function animate(time: DOMHighResTimeStamp) {
 let lastEnemyTime = -1000;
 
 function update(time: DOMHighResTimeStamp) {
-  for (const [, angle] of pointerAngles) {
-    spawnProjectile(angle)
-  }
-  for (const gamepad of navigator.getGamepads()) {
-    if (gamepad?.connected) {
-      const [x, y] = gamepad.axes
-      if (Math.abs(x) > 0.4 || Math.abs(y) > 0.4) {
-        const angle = Math.atan2(y, x)
-        spawnProjectile(angle)
-      }
-    }
-  }
   const spawnInterval = Math.max(500, 1000 - Math.pow(game.score, 2 / 3));
   if (time > lastEnemyTime + spawnInterval) {
     lastEnemyTime = time;
@@ -163,6 +151,34 @@ function update(time: DOMHighResTimeStamp) {
     }
     if (enemy.position.y < 0) {
       enemy.position.y = 100;
+    }
+  }
+  const pos = game.player.position
+  if (pos.x >= 100) pos.x = 0;
+  if (pos.x < 0) pos.x = 100;
+  if (pos.y >= 100) pos.y = 0;
+  if (pos.y < 0) pos.y = 100;
+  for (const [, angle] of pointerAngles) {
+    spawnProjectile(angle)
+  }
+  for (const gamepad of navigator.getGamepads()) {
+    if (!gamepad?.connected) continue
+    if (game.running) {
+      const [x, y, x2, y2] = gamepad.axes
+      if (Math.abs(x) > 0.4 || Math.abs(y) > 0.4) {
+        game.player.position.x += x / 10
+        game.player.position.y += y / 10
+      }
+      if (Math.abs(x2) > 0.4 || Math.abs(y2) > 0.4) {
+        const angle = Math.atan2(y2, x2)
+        spawnProjectile(angle)
+      }
+    } else {
+      const buttonPressedIndexes = gamepad.buttons.flatMap((b, i) => b.pressed ? [i] : [])
+      const abxy = [0, 1, 2, 3]
+      if (abxy.some(index => buttonPressedIndexes.includes(index))) {
+        startGame();
+      }
     }
   }
   if (!game.running) {
